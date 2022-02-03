@@ -192,8 +192,6 @@ public class ConversationListFragment extends MainFragment implements ActionMode
 
   private static final String TAG = Log.tag(ConversationListFragment.class);
 
-  private static final int MAXIMUM_PINNED_CONVERSATIONS = 4;
-
   private ActionMode                     actionMode;
   private ConstraintLayout               constraintLayout;
   private RecyclerView                   list;
@@ -959,16 +957,6 @@ public class ConversationListFragment extends MainFragment implements ActionMode
                                                       .map(conversation -> conversation.getThreadRecord().getThreadId())
                                                       .toList());
 
-    if (toPin.size() + viewModel.getPinnedCount() > MAXIMUM_PINNED_CONVERSATIONS) {
-      Snackbar.make(fab,
-                    getString(R.string.conversation_list__you_can_only_pin_up_to_d_chats, MAXIMUM_PINNED_CONVERSATIONS),
-                    Snackbar.LENGTH_LONG)
-              .setTextColor(Color.WHITE)
-              .show();
-      endActionModeIfActive();
-      return;
-    }
-
     SimpleTask.run(SignalExecutors.BOUNDED, () -> {
       ThreadDatabase db = SignalDatabase.threads();
 
@@ -1294,7 +1282,6 @@ public class ConversationListFragment extends MainFragment implements ActionMode
     boolean hasUnread   = Stream.of(viewModel.currentSelectedConversations()).anyMatch(conversation -> !conversation.getThreadRecord().isRead());
     boolean hasUnpinned = Stream.of(viewModel.currentSelectedConversations()).anyMatch(conversation -> !conversation.getThreadRecord().isPinned());
     boolean hasUnmuted  = Stream.of(viewModel.currentSelectedConversations()).anyMatch(conversation -> !conversation.getThreadRecord().getRecipient().live().get().isMuted());
-    boolean canPin      = viewModel.getPinnedCount() < MAXIMUM_PINNED_CONVERSATIONS;
 
     if (actionMode != null) {
       actionMode.setTitle(requireContext().getResources().getQuantityString(R.plurals.ConversationListFragment_s_selected, count, count));
@@ -1313,7 +1300,7 @@ public class ConversationListFragment extends MainFragment implements ActionMode
       items.add(new ActionItem(R.drawable.ic_unread_24, getResources().getQuantityString(R.plurals.ConversationListFragment_unread_plural, count), () -> handleMarkAsUnread(selectionIds)));
     }
 
-    if (!isArchived() && hasUnpinned && canPin) {
+    if (!isArchived() && hasUnpinned) {
       items.add(new ActionItem(R.drawable.ic_pin_24, getResources().getQuantityString(R.plurals.ConversationListFragment_pin_plural, count), () -> handlePin(viewModel.currentSelectedConversations())));
     } else if (!isArchived() && !hasUnpinned) {
       items.add(new ActionItem(R.drawable.ic_unpin_24, getResources().getQuantityString(R.plurals.ConversationListFragment_unpin_plural, count), () -> handleUnpin(selectionIds)));
